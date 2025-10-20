@@ -1,0 +1,22 @@
+#!/command/with-contenv bash
+# shellcheck shell=bash
+
+GLUETUN_PORT=8000
+GLUETUN_PATH=v1/openvpn/portforwarded
+TRANSMISSION_REMOTE=/usr/bin/transmission-remote
+
+old_port="0"
+while true; do
+  port=$(curl -s http://localhost:${GLUETUN_PORT}/${GLUETUN_PATH} | jq -r '.port')
+  if [[ "${old_port}" != "${port}" ]]; then
+      if ! ${TRANSMISSION_REMOTE} -n ${USER}:${PASS} --port ${port} --no-portmap; then
+          echo "[ERR] [$(date '+%Y-%m-%d %H:%M:%S')] [TRANSMISSION] Unable to set forwarded port, something is wrong!"
+      else
+          echo "[INF] [$(date '+%Y-%m-%d %H:%M:%S')] [TRANSMISSION] Updated forwarded port to [${port}]."
+      fi
+      old_port="${port}"
+  fi
+  sleep 60
+done
+
+
